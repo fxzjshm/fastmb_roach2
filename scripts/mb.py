@@ -67,7 +67,7 @@ def init_10gbe(dev, ip, port, dest_ip, dest_port):
 	# Workaround for tgtap:
 	#   write destination ip address entry in arp table to all 0 mac address
 	#   instead of broadcast address filled by tgtap
-	fpga.write(devname, '\0'*8, 0x3000 + 8 * (dest_ip_addr & 0xFF))
+	fpga.write(devname, b'\0'*8, 0x3000 + 8 * (dest_ip_addr & 0xFF))
 
 
 def split_snapshot(snap):

@@ -1,4 +1,5 @@
 """Module for performing various katadc functions from software"""
+from __future__ import print_function
 import numpy,struct,time
 
 WR = 0x0 << 0
@@ -14,15 +15,15 @@ def iic_write_register(fpga, katadc_n, dev_addr, reg_addr, reg_value):
     """fpga is an FpgaClient object, katadc_n is the adc number (0,1)"""
     if not katadc_n in [0,1]: raise RuntimeError("katadc_n must be 0 or 1. Please select your ZDok port.")
     iic_controller='iic_adc%i'%katadc_n
-    #print 'Trying to write %x to %s at dev_addr %x, reg_addr %x.'%(reg_value,iic_controller,dev_addr,reg_addr)
+    #print('Trying to write %x to %s at dev_addr %x, reg_addr %x.'%(reg_value,iic_controller,dev_addr,reg_addr))
     # Block Fifo
-    fpga.blindwrite(iic_controller,'%c%c%c%c'%(0x0,0x00,0x00,0x01), offset=12)
+    fpga.blindwrite(iic_controller,b'%c%c%c%c'%(0x0,0x00,0x00,0x01), offset=12)
     # Write IIC control byte
-    fpga.blindwrite(iic_controller,'%c%c%c%c'%(0x0,0x00, WR | START | LOCK, (dev_addr << 1) | IIC_WR), offset=0x0)
+    fpga.blindwrite(iic_controller,b'%c%c%c%c'%(0x0,0x00, WR | START | LOCK, (dev_addr << 1) | IIC_WR), offset=0x0)
     # Write IIC register address
-    fpga.blindwrite(iic_controller,'%c%c%c%c'%(0x0,0x00, WR | LOCK, reg_addr), offset=0x0)
+    fpga.blindwrite(iic_controller,b'%c%c%c%c'%(0x0,0x00, WR | LOCK, reg_addr), offset=0x0)
     # Write IIC register value
-    fpga.blindwrite(iic_controller,'%c%c%c%c'%(0x0,0x00, WR | STOP, reg_value), offset=0x0)
+    fpga.blindwrite(iic_controller,b'%c%c%c%c'%(0x0,0x00, WR | STOP, reg_value), offset=0x0)
     # Unblock Fifo
     fpga.blindwrite(iic_controller,struct.pack('>4B',0,0,0,0), offset=12)
 
@@ -31,17 +32,17 @@ def iic_read_register(fpga,katadc_n, dev_addr, reg_addr):
     if not katadc_n in [0,1]: raise RuntimeError("katadc_n must be 0 or 1. Please select your ZDok port.")
     iic_controller='iic_adc%i'%katadc_n
     # Block Fifo
-    fpga.blindwrite(iic_controller,'%c%c%c%c'%(0x0,0x00,0x00,0x01), offset=12)
+    fpga.blindwrite(iic_controller,b'%c%c%c%c'%(0x0,0x00,0x00,0x01), offset=12)
     # Write IIC control byte
-    fpga.blindwrite(iic_controller,'%c%c%c%c'%(0x0,0x00, WR | START | LOCK, (dev_addr << 1) | IIC_WR), offset=0x0)
+    fpga.blindwrite(iic_controller,b'%c%c%c%c'%(0x0,0x00, WR | START | LOCK, (dev_addr << 1) | IIC_WR), offset=0x0)
     # Write IIC register address
-    fpga.blindwrite(iic_controller,'%c%c%c%c'%(0x0,0x00, WR | LOCK, reg_addr), offset=0x0)
+    fpga.blindwrite(iic_controller,b'%c%c%c%c'%(0x0,0x00, WR | LOCK, reg_addr), offset=0x0)
     # Send repeated START
-    fpga.blindwrite(iic_controller,'%c%c%c%c'%(0x0,0x00, WR | START | LOCK, (dev_addr << 1) | IIC_RD), offset=0x0)
+    fpga.blindwrite(iic_controller,b'%c%c%c%c'%(0x0,0x00, WR | START | LOCK, (dev_addr << 1) | IIC_RD), offset=0x0)
     # Fetch IIC register value
-    fpga.blindwrite(iic_controller,'%c%c%c%c'%(0x0,0x00, RD | STOP, 0), offset=0x0)
+    fpga.blindwrite(iic_controller,b'%c%c%c%c'%(0x0,0x00, RD | STOP, 0), offset=0x0)
     # Unblock Fifo
-    fpga.blindwrite(iic_controller,'%c%c%c%c'%(0x0,0x00,0x00,0x00), offset=12)
+    fpga.blindwrite(iic_controller,b'%c%c%c%c'%(0x0,0x00,0x00,0x00), offset=12)
     time.sleep(0.1)
     return struct.unpack('>BBBB',fpga.read(iic_controller,4,4))[3]
 
@@ -54,22 +55,22 @@ def _eeprom_read(fpga,katadc_n,n_bytes,offset=0):
     n_bytes_remaining=n_bytes
     rv=[]
     #flush the fifos:
-    fpga.blindwrite(iic_controller,'%c%c%c%c'%(0xff,0xff,0xff,0xff),offset=0x8)
+    fpga.blindwrite(iic_controller,b'%c%c%c%c'%(0xff,0xff,0xff,0xff),offset=0x8)
     #break n_bytes into 32-byte chunks (max fifo length):
     while n_bytes_remaining > 0:
         # Block Fifo
-        fpga.blindwrite(iic_controller,'%c%c%c%c'%(0x0,0x00,0x00,0x01), offset=12)
+        fpga.blindwrite(iic_controller,b'%c%c%c%c'%(0x0,0x00,0x00,0x01), offset=12)
         # Write IIC control byte
-        fpga.blindwrite(iic_controller,'%c%c%c%c'%(0x0,0x00, WR | START | LOCK, (dev_addr << 1) | IIC_WR), offset=0x0)
+        fpga.blindwrite(iic_controller,b'%c%c%c%c'%(0x0,0x00, WR | START | LOCK, (dev_addr << 1) | IIC_WR), offset=0x0)
         # Write IIC register address
-        fpga.blindwrite(iic_controller,'%c%c%c%c'%(0x0,0x00, WR | LOCK, reg_addr+len(rv)), offset=0x0)
+        fpga.blindwrite(iic_controller,b'%c%c%c%c'%(0x0,0x00, WR | LOCK, reg_addr+len(rv)), offset=0x0)
         # Send repeated START
-        fpga.blindwrite(iic_controller,'%c%c%c%c'%(0x0,0x00, WR | START | LOCK, (dev_addr << 1) | IIC_RD), offset=0x0)
+        fpga.blindwrite(iic_controller,b'%c%c%c%c'%(0x0,0x00, WR | START | LOCK, (dev_addr << 1) | IIC_RD), offset=0x0)
         # Fetch IIC register value
         for i in range(min(31,n_bytes_remaining-1)):
-            fpga.blindwrite(iic_controller,'%c%c%c%c'%(0x0,0x00, RD, 0), offset=0x0)
-            #print '%4X'%struct.unpack('>L',fpga.read(iic_controller,4,0x8))
-        fpga.blindwrite(iic_controller,'%c%c%c%c'%(0x0,0x00, RD | STOP, 0), offset=0x0)
+            fpga.blindwrite(iic_controller,b'%c%c%c%c'%(0x0,0x00, RD, 0), offset=0x0)
+            #print('%4X'%struct.unpack('>L',fpga.read(iic_controller,4,0x8)))
+        fpga.blindwrite(iic_controller,b'%c%c%c%c'%(0x0,0x00, RD | STOP, 0), offset=0x0)
         #check for OP buffer overflow:
         #   Bit[0] RXFIFO empty flag
         #   Bit[1] RXFIFO full flag
@@ -79,14 +80,14 @@ def _eeprom_read(fpga,katadc_n,n_bytes,offset=0):
         #   Bit[6] OPFIFO overflow error latch
         #   Bit[8] NACK on write error latch
         if bool(struct.unpack('>L',fpga.read(iic_controller,4,0x8))[0]&int('1100110',2)):
-            #fpga.blindwrite(iic_controller,'%c%c%c%c'%(0xff,0xff,0xff,0xff),offset=0x8)
+            #fpga.blindwrite(iic_controller,b'%c%c%c%c'%(0xff,0xff,0xff,0xff),offset=0x8)
             raise RuntimeError("Sorry, you requested too many bytes and the IIC controller's buffer overflowed.")
         # Unblock Fifo
-        fpga.blindwrite(iic_controller,'%c%c%c%c'%(0x0,0x00,0x00,0x00), offset=12)
+        fpga.blindwrite(iic_controller,b'%c%c%c%c'%(0x0,0x00,0x00,0x00), offset=12)
         for i in range(min(32,n_bytes_remaining)):
             rv.append(fpga.read(iic_controller,4,4)[3])
         n_bytes_remaining -= min(32,n_bytes_remaining)
-        #print 'got %i bytes, remaining: %i bytes'%(len(rv),n_bytes_remaining)
+        #print('got %i bytes, remaining: %i bytes'%(len(rv),n_bytes_remaining))
     return ''.join(rv)
 
 #NOT WORKING:
@@ -95,14 +96,14 @@ def _eeprom_read(fpga,katadc_n,n_bytes,offset=0):
 #    if not katadc_n in [0,1]: raise RuntimeError("katadc_n must be 0 or 1. Please select your ZDok port.")
 #    iic_controller='iic_adc%i'%katadc_n
 #    # Block Fifo
-#    fpga.blindwrite(iic_controller,'%c%c%c%c'%(0x0,0x00,0x00,0x01), offset=12)
+#    fpga.blindwrite(iic_controller,b'%c%c%c%c'%(0x0,0x00,0x00,0x01), offset=12)
 #    for n,c in enumerate(raw_data):
 #        # Write IIC control byte
-#        fpga.blindwrite(iic_controller,'%c%c%c%c'%(0x0,0x00, WR | START | LOCK, (dev_addr << 1) | IIC_WR), offset=0x0)
+#        fpga.blindwrite(iic_controller,b'%c%c%c%c'%(0x0,0x00, WR | START | LOCK, (dev_addr << 1) | IIC_WR), offset=0x0)
 #        # Write IIC register address
-#        fpga.blindwrite(iic_controller,'%c%c%c%c'%(0x0,0x00, WR | LOCK, n+start_addr), offset=0x0)
+#        fpga.blindwrite(iic_controller,b'%c%c%c%c'%(0x0,0x00, WR | LOCK, n+start_addr), offset=0x0)
 #        # Write IIC register value
-#        fpga.blindwrite(iic_controller,'%c%c%c%c'%(0x0,0x00, WR | STOP, c), offset=0x0)
+#        fpga.blindwrite(iic_controller,b'%c%c%c%c'%(0x0,0x00, WR | STOP, c), offset=0x0)
 #    #check for OP buffer overflow:
 #    #   Bit[0] RXFIFO empty flag
 #    #   Bit[1] RXFIFO full flag
@@ -113,7 +114,7 @@ def _eeprom_read(fpga,katadc_n,n_bytes,offset=0):
 #    #   Bit[8] NACK on write error latch
 #    if bool(ord(fpga.read(iic_controller,4,12)[0])&0b10000): raise RuntimeError("Sorry, you requested too many bytes and the IIC controller's buffer overflowed.")
 #    # Unblock Fifo
-#    fpga.blindwrite(iic_controller,'%c%c%c%c'%(0x0,0x00,0x00,0x00), offset=12)
+#    fpga.blindwrite(iic_controller,b'%c%c%c%c'%(0x0,0x00,0x00,0x00), offset=12)
 
 
 def get_ambient_temp(fpga,katadc_n):
@@ -185,14 +186,14 @@ def set_noninterleaved(fpga,katadc_n,dlf=True):
     reset(fpga,katadc_n,reset=True)
     spi_write_register(fpga,katadc_n,0x9,0x03ff+(dlf<<10))
     reset(fpga,katadc_n,reset=False)
-    #fpga.blindwrite('kat_adc_controller','%c%c%c%c'%(0x03,0xff,0x09,0x01), offset=0x4+katadc_n*(0x04))
+    #fpga.blindwrite('kat_adc_controller',b'%c%c%c%c'%(0x03,0xff,0x09,0x01), offset=0x4+katadc_n*(0x04))
 
 def reset(fpga,katadc_n,reset=False):
     """Reset the ADC and FPGA DCM. Set "reset" to True to hold in reset, False to clear."""
     #Reset pulse: writing '1' to bit 0 resets ADC0; writing '1' to bit 1 resets ADC1 (at offset 0x3).
     #Reset level: writing '1' to bit 4/5 holds ADC0/1 and associated DCM in reset (at byte offset 0x3).
     if not katadc_n in [0,1]: raise RuntimeError("katadc_n must be 0 or 1. Please select your ZDok port.")
-    fpga.blindwrite('kat_adc_controller','%c%c%c%c'%(0x0,0x00,0x00,reset*(0x10<<katadc_n)))
+    fpga.blindwrite('kat_adc_controller',b'%c%c%c%c'%(0x0,0x00,0x00,reset*(0x10<<katadc_n)))
 
 def cal_now(fpga,katadc_n):
     """Triggers adc's self-calibrate function"""
@@ -265,9 +266,9 @@ def rf_fe_get(fpga,katadc_n,input_sel):
 def gpio_header_get(fpga,katadc_n):
     if not katadc_n in [0,1]: raise RuntimeError("katadc_n must be 0 or 1. Please select your ZDok port.")
     for pol in range(2):
-        print "IIC GPIO expansion on ADC%i's %s input:"%(katadc_n,{0:'I',1:'Q'}[pol])
+        print("IIC GPIO expansion on ADC%i's %s input:"%(katadc_n,{0:'I',1:'Q'}[pol]))
         for i in range(0,8):
-            print '\t%x: %x'%(i,iic_read_register(fpga, katadc_n, 0x20+pol, i))
+            print('\t%x: %x'%(i,iic_read_register(fpga, katadc_n, 0x20+pol, i)))
 
 def gpio_header_set(fpga,katadc_n,input_sel):
     if not katadc_n in [0,1]: raise RuntimeError("katadc_n must be 0 or 1. Please select your ZDok port.")

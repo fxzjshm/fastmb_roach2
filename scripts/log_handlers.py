@@ -1,5 +1,6 @@
 import logging
-import termcolors
+#import termcolors
+import termcolor
 
 class DebugLogHandler(logging.Handler):
     """A logger for KATCP tests."""
@@ -28,16 +29,16 @@ class DebugLogHandler(logging.Handler):
     def printMessages(self):
         for i in self._records:
             if i.exc_info:
-                print termcolors.colorize('%s: %s Exception: '%(i.name,i.msg),i.exc_info[0:-1],fg='red')
+                print(termcolor.colorize('%s: %s Exception: '%(i.name,i.msg),i.exc_info[0:-1],fg='red'))
             else:
                 if i.levelno < logging.WARNING:
-                    print termcolors.colorize('%s: %s'%(i.name,i.msg),fg='green')
+                    print(termcolor.colorize('%s: %s'%(i.name,i.msg),fg='green'))
                 elif (i.levelno >= logging.WARNING) and (i.levelno < logging.ERROR):
-                    print termcolors.colorize('%s: %s'%(i.name,i.msg),fg='yellow')
+                    print(termcolor.colorize('%s: %s'%(i.name,i.msg),fg='yellow'))
                 elif i.levelno >= logging.ERROR:
-                    print termcolors.colorize('%s: %s'%(i.name,i.msg),fg='red')
+                    print(termcolor.colorize('%s: %s'%(i.name,i.msg),fg='red'))
                 else:
-                    print '%s: %s'%(i.name,i.msg)
+                    print('%s: %s'%(i.name,i.msg))
 
 
 #log_handler = TestLogHandler()
